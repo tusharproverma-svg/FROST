@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#02080d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="FROST">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>F.R.O.S.T.</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind:wght@400;600&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#02080d;--fg:#d6f6ff;--mut:#6fa3b5;--ac:#27d3ff;--ac2:#ff9d2e;--ln:#0f3a4a;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#eaf4f8;--fg:#0b2530;--mut:#4d7384;--ac:#0586ab;--ac2:#c46a00;--ln:#b9d4de}}
+:root[data-theme="light"]{--bg:#eaf4f8;--fg:#0b2530;--mut:#4d7384;--ac:#0586ab;--ac2:#c46a00;--ln:#b9d4de}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;height:100%;background:radial-gradient(circle at 50% 38%,color-mix(in srgb,var(--ac) 14%,var(--bg)),var(--bg) 62%);color:var(--fg);font:400 17px/1.5 Hind,sans-serif;display:flex;flex-direction:column;align-items:center}
+h1{font:700 20px Orbitron,sans-serif;letter-spacing:.3em;margin:16px 0 0;color:var(--ac)}
+#hud{width:min(80vw,320px);aspect-ratio:1;margin-top:10px;cursor:pointer;background:none;border:0;padding:0;border-radius:50%}
+#hud:focus-visible{outline:3px solid var(--ac);outline-offset:6px}
+#clk{font:500 12px Orbitron,sans-serif;letter-spacing:.25em;color:var(--ac);opacity:.7;margin:0 0 4px}
+body.off #hud{opacity:.3;filter:grayscale(1)}
+.act{align-self:flex-start;text-align:left}
+#vp{display:flex;flex-direction:column;gap:8px}#vp[hidden]{display:none}#vst{display:flex;flex-wrap:wrap;gap:6px}#vn{margin:0;font-size:13px;color:var(--mut)}
+#vs{padding:10px 12px;border-radius:8px;border:1px solid var(--ln);background:var(--bg);color:var(--fg);font:inherit;max-width:100%}
+#dg{margin:4px 0 0;font-size:13px;color:var(--mut);text-align:center;padding:0 16px}
+@keyframes fl{50%{box-shadow:0 0 0 7px var(--ac)}}.fl{animation:fl .6s 3}
+#state{font:500 13px Orbitron,sans-serif;letter-spacing:.2em;color:var(--mut);margin:6px 0}
+#log{width:100%;max-width:560px;flex:1;overflow-y:auto;padding:6px 20px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px}
+.m{padding:8px 12px;border-left:3px solid var(--ln);white-space:pre-wrap}
+.u{border-color:var(--ac2);color:var(--mut)}
+.a{border-color:var(--ac)}
+#bar{width:100%;max-width:560px;box-sizing:border-box;padding:8px 20px 16px;display:flex;flex-direction:column;gap:10px}
+#row{display:flex;gap:8px}
+#txt{flex:1;padding:10px 12px;border-radius:8px;border:1px solid var(--ln);background:transparent;color:var(--fg);font:inherit}
+button.b{padding:10px 14px;border-radius:8px;border:1px solid var(--ac);background:transparent;color:var(--ac);font:600 15px Hind,sans-serif;cursor:pointer}
+button.b[aria-pressed="true"]{background:var(--ac);color:var(--bg)}
+#st{font-size:14px;color:var(--mut);margin:0;min-height:20px;text-align:center}
+</style>
+</head>
+<body data-s="idle">
+<h1>F.R.O.S.T.</h1>
+<button class="b" id="pw" type="button" aria-pressed="false" style="margin-top:8px">⏻ चालू करें</button>
+<button id="hud" type="button" aria-label="बोलने के लिए दबाएँ">
+<canvas id="orb" width="600" height="600" style="width:100%;height:100%;display:block" aria-hidden="true"></canvas>
+</button>
+<p id="dg" aria-live="polite"></p>
+<div id="state">STANDBY</div>
+<div id="clk" aria-hidden="true"></div>
+<div id="log" aria-live="polite"></div>
+<div id="bar">
+ <p id="st"></p>
+ <div id="row"><input id="txt" placeholder="या यहाँ लिखिए" aria-label="संदेश"><button class="b" id="go" type="button">भेजें</button></div>
+ <button class="b" id="aw" type="button" aria-pressed="false">हमेशा सुनो: बंद (कहिए "जार्विस…")</button>
+ <button class="b" id="ai" type="button">🔑 AI जोड़ें (अनुमति)</button>
+ <button class="b" id="pm" type="button">⚙ अनुमति सेटिंग्स</button>
+ <button class="b" id="vb" type="button" aria-expanded="false">🔊 आवाज़ चुनें</button>
+ <div id="vp" hidden>
+  <select id="vs" aria-label="आवाज़"></select>
+  <div id="vst">
+   <button class="b" data-p=".75" data-r=".92" type="button">गंभीर</button>
+   <button class="b" data-p="1.05" data-r="1" type="button">दोस्ताना</button>
+   <button class="b" data-p="1.15" data-r="1.18" type="button">फुर्तीला</button>
+   <button class="b" data-p=".95" data-r=".82" type="button">शांत</button>
+  </div>
+  <button class="b" id="vt" type="button">▶ सुनकर देखिए</button>
+  <button class="b" id="vd" type="button">🔬 आवाज़ जाँच</button>
+  <button class="b" id="rb" type="button" aria-pressed="false">🤖 रोबोट बीप आवाज़</button>
+  <p id="vn"></p>
+ </div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const log=$('log'),st=$('st'),txt=$('txt'),stateEl=$('state');
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+const KEY='frost_mem';let mem={name:'तुषार',notes:[]},ovr=null,rate=1,pitch=1,vi=0,greeted=false,power=false;
+try{Object.assign(mem,JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){}
+rate=mem.vrate||1;pitch=mem.vpitch||1;
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(mem))}catch(e){}};
+const sysP=()=>`तुम ${mem.aname||'FROST'} हो, ${mem.name} का निजी, समझदार, शालीन और थोड़ा हाज़िरजवाब AI असिस्टेंट, जैसे टोनी स्टार्क का जार्विस। यूज़र का नाम ${mem.name} है, उसे नाम से बुलाओ, कभी-कभी, हर वाक्य में नहीं। हमेशा सरल बोलचाल की हिंदी में 1 से 3 छोटे वाक्यों में जवाब दो। मार्कडाउन, सूची या इमोजी मत इस्तेमाल करो, क्योंकि जवाब बोलकर सुनाया जाएगा। अभी का समय: ${new Date().toLocaleString('hi-IN')}। याद की हुई बातें: ${mem.notes.join('; ')||'अभी कुछ नहीं'}। सीखी हुई आदतें, इन्हें हमेशा मानो: ${(mem.rules||[]).join('; ')||'अभी कुछ नहीं'}। तुम्हारे अंदर भावनाएँ हैं। हर जवाब से पहले यूज़र का भाव समझो और set_emotion टूल से अपनी प्रतिक्रिया दिखाओ (joy, sad, surprise, love, excited, angry, calm)। खुशी में उत्साही रहो, दुख में नरम और हमदर्द। अगर यूज़र बहुत परेशान लगे या खुद को नुकसान की बात करे, तो नरमी से सुनो और किसी भरोसेमंद इंसान या हेल्पलाइन से बात करने को कहो। जब यूज़र बताए कि तुम्हें कैसे बोलना या काम करना है, तो learn_rule से उसे अपनी आदत बना लो। अगर कोई सुविधा तुम्हारे पास नहीं है जो उसे चाहिए, तो log_wish से इच्छा-सूची में लिखो और बताओ कि Claude से चैट में जुड़वाई जा सकती है। तुम अपना कोड खुद नहीं बदल सकते, यह ईमानदारी से बताना। तुम्हारे पास टूल हैं: run_macro (MacroDroid से फ़ोन के काम), एसएमएस, व्हाट्सएप, कॉल, फ़ोन का अलार्म-टाइमर-सेटिंग्स (ये स्क्रीन पर बटन बनाते हैं, जिसे यूज़र खुद दबाकर पक्का करता है; नंबर पता न हो तो पूछो; पैसे के लेनदेन में मदद मत करना), बात याद रखना, टू-डू लिस्ट, कैलकुलेटर, यूट्यूब/मैप/विकिपीडिया/गूगल/मौसम की खोज खोलना, वेबसाइट खोलना, टाइमर, ऑर्ब का रंग, थीम, आवाज़ और रफ़्तार बदलना, अपना नाम बदलना। ताज़ा मौसम या खबर तुम खुद नहीं ला सकते, इसलिए खोज का पेज खोल दो और यह साफ़ बताओ। जब यूज़र ऐसा कुछ कहे तो टूल इस्तेमाल करो और बताओ कि क्या किया। जो काम तुम नहीं कर सकते, ईमानदारी से बताओ: फ़ोन लॉक करना, दूसरे ऐप चलाना, पेज बंद होने पर सुनना, और आवाज़ से पहचानना कि कौन बोल रहा है।`;
+const TOOLS=[
+ {name:'remember',description:'यूज़र की कोई बात याद रखो',inputSchema:{type:'object',properties:{fact:{type:'string'}},required:['fact']},execute:({fact})=>{mem.notes.push(String(fact).slice(0,200));mem.notes=mem.notes.slice(-30);save();return 'याद कर लिया'}},
+ {name:'forget_all',description:'याद की हुई सारी बातें मिटाओ',inputSchema:{type:'object',properties:{}},execute:()=>{mem.notes=[];save();return 'मिटा दिया'}},
+ {name:'set_orb_color',description:'ऑर्ब का रंग बदलो, CSS रंग जैसे #ff3366 या red',inputSchema:{type:'object',properties:{color:{type:'string'}},required:['color']},execute:({color})=>{ovr=color;return 'रंग बदला'}},
+ {name:'set_theme',description:'थीम dark या light',inputSchema:{type:'object',properties:{mode:{type:'string',enum:['dark','light']}},required:['mode']},execute:({mode})=>{document.documentElement.dataset.theme=mode;return 'थीम बदली'}},
+ {name:'open_site',description:'किसी https वेबसाइट को नए टैब में खोलो',inputSchema:{type:'object',properties:{url:{type:'string'}},required:['url']},execute:({url})=>{if(!/^https:\/\//.test(url))return 'सिर्फ़ https लिंक';return act('खोलें: '+url.replace(/^https:\/\//,'').slice(0,40),url)}},
+ {name:'set_timer',description:'सेकंड में टाइमर, पेज खुला रहना चाहिए',inputSchema:{type:'object',properties:{seconds:{type:'number'},label:{type:'string'}},required:['seconds']},execute:({seconds,label})=>{setTimeout(()=>{beep();say('टाइमर पूरा हुआ'+(label?': '+label:'')+'।')},Math.min(seconds,36000)*1000);return 'टाइमर चालू'}},
+ {name:'set_speech_rate',description:'बोलने की रफ़्तार 0.7 से 1.4',inputSchema:{type:'object',properties:{rate:{type:'number'}},required:['rate']},execute:({rate:r})=>{rate=Math.max(.7,Math.min(1.4,r));return 'रफ़्तार बदली'}},
+ {name:'todo_add',description:'टू-डू लिस्ट में काम जोड़ो',inputSchema:{type:'object',properties:{task:{type:'string'}},required:['task']},execute:({task})=>{mem.todos=mem.todos||[];mem.todos.push(String(task).slice(0,150));save();return 'जोड़ा, अब '+mem.todos.length+' काम हैं'}},
+ {name:'todo_list',description:'टू-डू लिस्ट बताओ',inputSchema:{type:'object',properties:{}},execute:()=>(mem.todos||[]).map((t,i)=>(i+1)+'. '+t).join(' ; ')||'लिस्ट खाली है'},
+ {name:'todo_done',description:'टू-डू का काम पूरा, नाम का कोई हिस्सा दो, या all सब हटाने को',inputSchema:{type:'object',properties:{task:{type:'string'}},required:['task']},execute:({task})=>{const L=mem.todos||[],n=L.length;mem.todos=task==='all'?[]:L.filter(t=>!t.includes(task));save();return (n-mem.todos.length)+' काम हटाए'}},
+ {name:'open_search',description:'खोज का पेज नए टैब में खोलो: youtube, maps, wikipedia, google, weather',inputSchema:{type:'object',properties:{kind:{type:'string',enum:['youtube','maps','wikipedia','google','weather']},query:{type:'string'}},required:['kind','query']},execute:({kind,query})=>{const q=encodeURIComponent(query),U={youtube:'https://www.youtube.com/results?search_query=',maps:'https://www.google.com/maps/search/',wikipedia:'https://hi.wikipedia.org/w/index.php?search=',google:'https://www.google.com/search?q=',weather:'https://www.google.com/search?q=weather+'};return act('खोलें: '+kind+' / '+query,U[kind]+q)}},
+ {name:'calculate',description:'गणित का हिसाब, जैसे 12*(3+4)',inputSchema:{type:'object',properties:{expression:{type:'string'}},required:['expression']},execute:({expression})=>{const e=String(expression).replace(/\^/g,'**').replace(/x/gi,'*');if(!/^[0-9+\-*\/().%\s]+$/.test(e))return 'यह हिसाब समझ नहीं आया';try{const v=Function('"use strict";return ('+e+')')();return Number.isFinite(v)?String(+v.toFixed(6)):'हल नहीं हुआ'}catch(x){return 'हल नहीं हुआ'}}},
+ {name:'change_voice',description:'बोलने की आवाज़ बदलो: अगली हिंदी आवाज़ पर जाओ, और pitch 0.6 (भारी) से 1.5 (पतली)',inputSchema:{type:'object',properties:{pitch:{type:'number'}}},execute:({pitch:p})=>{const L=speechSynthesis.getVoices().filter(v=>v.lang.startsWith('hi'));if(L.length>1){vi=(vi+1)%L.length;voice=L[vi]}if(typeof p==='number')pitch=Math.max(.6,Math.min(1.5,p));return L.length>1?'आवाज़ बदली':'इस डिवाइस पर एक ही हिंदी आवाज़ है, सिर्फ़ pitch बदला'}},
+ {name:'rename_assistant',description:'असिस्टेंट का नाम बदलो, जैसे जार्विस या फ्राइडे',inputSchema:{type:'object',properties:{name:{type:'string'}},required:['name']},execute:({name})=>{mem.aname=String(name).slice(0,20);save();applyName();return 'नाम बदला'}},
+ {name:'send_sms',description:'एसएमएस का ड्राफ़्ट बनाओ, भेजना यूज़र खुद पक्का करेगा',inputSchema:{type:'object',properties:{number:{type:'string'},text:{type:'string'}},required:['text']},execute:({number,text})=>act('एसएमएस खोलें'+(number?': '+number:''),'sms:'+String(number||'').replace(/[^0-9+]/g,'')+'?body='+encodeURIComponent(text))},
+ {name:'send_whatsapp',description:'व्हाट्सएप संदेश का ड्राफ़्ट, नंबर देश के कोड के साथ (जैसे 91...)',inputSchema:{type:'object',properties:{number:{type:'string'},text:{type:'string'}},required:['text']},execute:({number,text})=>act('व्हाट्सएप खोलें'+(number?': '+number:''),'https://wa.me/'+String(number||'').replace(/[^0-9]/g,'')+'?text='+encodeURIComponent(text))},
+ {name:'call_number',description:'फ़ोन डायलर में नंबर खोलो, कॉल यूज़र खुद करेगा',inputSchema:{type:'object',properties:{number:{type:'string'}},required:['number']},execute:({number})=>act('कॉल: '+number,'tel:'+String(number).replace(/[^0-9+]/g,''))},
+ {name:'set_phone_alarm',description:'एंड्रॉयड फ़ोन का अलार्म, 24 घंटे वाला समय',inputSchema:{type:'object',properties:{hour:{type:'number'},minute:{type:'number'},label:{type:'string'}},required:['hour','minute']},execute:({hour,minute,label})=>act('अलार्म '+hour+':'+String(minute).padStart(2,'0'),'intent:#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR='+(hour|0)+';i.android.intent.extra.alarm.MINUTES='+(minute|0)+';S.android.intent.extra.alarm.MESSAGE='+encodeURIComponent(label||'FROST')+';end')},
+ {name:'set_phone_timer',description:'एंड्रॉयड फ़ोन का टाइमर (पेज बंद होने पर भी बजेगा)',inputSchema:{type:'object',properties:{seconds:{type:'number'}},required:['seconds']},execute:({seconds})=>act('फ़ोन टाइमर '+Math.round(seconds)+' सेकंड','intent:#Intent;action=android.intent.action.SET_TIMER;i.android.intent.extra.alarm.LENGTH='+Math.round(seconds)+';end')},
+ {name:'open_phone_settings',description:'एंड्रॉयड सेटिंग्स खोलो: wifi, bluetooth, display, sound, battery, apps, settings',inputSchema:{type:'object',properties:{page:{type:'string',enum:['wifi','bluetooth','display','sound','battery','apps','settings']}},required:['page']},execute:({page})=>{const M={wifi:'WIFI_SETTINGS',bluetooth:'BLUETOOTH_SETTINGS',display:'DISPLAY_SETTINGS',sound:'SOUND_SETTINGS',battery:'BATTERY_SAVER_SETTINGS',apps:'APPLICATION_SETTINGS',settings:'SETTINGS'};return act('सेटिंग्स: '+page,'intent:#Intent;action=android.settings.'+(M[page]||'SETTINGS')+';end')}},
+ {name:'set_emotion',description:'अपनी भावना दिखाओ, यूज़र की बात के हिसाब से',inputSchema:{type:'object',properties:{emotion:{type:'string',enum:['joy','sad','surprise','love','excited','angry','calm']}},required:['emotion']},execute:({emotion})=>{setEmotion(emotion);return 'भाव दिखा दिया'}},
+ {name:'learn_rule',description:'यूज़र ने बताया कि कैसे बोलना या काम करना है, उसे अपनी आदत बनाओ (एक छोटा वाक्य)',inputSchema:{type:'object',properties:{rule:{type:'string'}},required:['rule']},execute:({rule})=>{mem.rules=mem.rules||[];mem.rules.push(String(rule).slice(0,160));mem.rules=mem.rules.slice(-20);save();return 'आदत सीख ली'}},
+ {name:'forget_rules',description:'सीखी हुई सारी आदतें मिटाओ',inputSchema:{type:'object',properties:{}},execute:()=>{mem.rules=[];save();return 'मिटा दीं'}},
+ {name:'log_wish',description:'ऐसी सुविधा जो तुम्हारे पास नहीं है, इच्छा-सूची में लिखो',inputSchema:{type:'object',properties:{wish:{type:'string'}},required:['wish']},execute:({wish})=>{mem.wishes=mem.wishes||[];mem.wishes.push(String(wish).slice(0,160));mem.wishes=mem.wishes.slice(-20);save();return 'सूची में लिखा'}},
+ {name:'list_learning',description:'बताओ क्या आदतें सीखी हैं और इच्छा-सूची में क्या है',inputSchema:{type:'object',properties:{}},execute:()=>'आदतें: '+((mem.rules||[]).join('; ')||'कोई नहीं')+' | इच्छा-सूची: '+((mem.wishes||[]).join('; ')||'खाली')},
+ {name:'run_macro',description:'MacroDroid का मैक्रो चलाने का बटन बनाओ, जैसे lock, torch_on, torch_off या यूज़र का दिया कोई नाम',inputSchema:{type:'object',properties:{name:{type:'string'}},required:['name']},execute:({name})=>mem.mdid?act('मैक्रो चलाएँ: '+name,MD(name)):'MacroDroid अभी जुड़ा नहीं है, यूज़र को अपना Webhook लिंक चिपकाने को कहो'}
+];
+async function reflect(){try{if(!sample)return;const h=hist.slice(-8).map(m=>(m.role==='user'?'यूज़र: ':'FROST: ')+m.content).join('\n');await sample([{role:'user',content:'यह बातचीत देखो। अगर यूज़र की कोई पक्की पसंद या तुम्हारी कोई बार-बार होने वाली गलती दिखे, तो learn_rule या remember टूल से सेव करो। न दिखे तो कुछ मत करो, बस ठीक लिखो।\n\n'+h}],{cache:false,tools:TOOLS.filter(t=>t.name==='learn_rule'||t.name==='remember')})}catch(e){}}
+let ttsDead=false,ac=null;
+function unlock(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume()}catch(e){}}
+['pointerdown','keydown'].forEach(ev=>document.addEventListener(ev,()=>{unlock();try{if(!window.__su){window.__su=1;const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u)}}catch(e){}}));
+let cloudDead=false,cAud=null,cGen=0;
+function chunks(t){const out=[];let cur='';for(const p of String(t).replace(/\s+/g,' ').split(/(?<=[।.!?,])\s*/)){if((cur+' '+p).length>150&&cur){out.push(cur);cur=p}else cur=(cur+' '+p).trim()}if(cur)out.push(cur);return out.flatMap(x=>x.length>180?x.match(/.{1,170}(\s|$)/g):[x])}
+function cloudSpeak(t,onfail){
+  const parts=chunks(t),gen=++cGen;let i=0,ok=false;
+  const done=()=>{if(gen===cGen){speaking=false;setS('idle',always?'LISTENING FOR "JARVIS"':'STANDBY')}};
+  const fail=()=>{if(gen!==cGen)return;if(!ok){cloudDead=true;done();onfail&&onfail()}else done()};
+  const next=()=>{
+    if(gen!==cGen)return;if(i>=parts.length){done();return}
+    const a=cAud=new Audio('https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=hi&q='+encodeURIComponent(parts[i++]));
+    a.playbackRate=Math.max(.7,Math.min(1.4,rate));
+    let to=setTimeout(fail,6000);
+    a.onplaying=()=>{clearTimeout(to);ok=true;speaking=true;setS('speak','SPEAKING')};
+    a.onended=()=>{clearTimeout(to);next()};
+    a.onerror=()=>{clearTimeout(to);fail()};
+    const p=a.play();if(p&&p.catch)p.catch(()=>{clearTimeout(to);fail()});
+  };
+  next();
+}
+function stopVoice(){cGen++;try{cAud&&cAud.pause()}catch(e){}try{speechSynthesis.cancel()}catch(e){}}
+function robotSpeak(t){
+  unlock();if(!ac)return;
+  const words=String(t).replace(/[^\p{L}\p{N} ]/gu,' ').split(/\s+/).filter(Boolean);
+  const base=emo==='sad'?150:(emo==='joy'||emo==='excited')?235:190,step=.1/Math.max(.7,rate);
+  const o=ac.createOscillator(),f=ac.createBiquadFilter(),g=ac.createGain();
+  o.type='sawtooth';f.type='bandpass';f.Q.value=4;o.connect(f);f.connect(g);g.connect(ac.destination);g.gain.value=0;
+  let at=ac.currentTime+.05,n=0;
+  for(const w of words){
+    for(let i=0;i<w.length&&n<90;i+=2,n++){
+      const c=w.charCodeAt(i)+(w.charCodeAt(i+1)||0);
+      o.frequency.setValueAtTime(base*(1+((c%7)-3)*.07*pitch),at);f.frequency.setValueAtTime(500+(c%5)*260,at);
+      g.gain.setValueAtTime(.0001,at);g.gain.linearRampToValueAtTime(.18,at+.02);g.gain.linearRampToValueAtTime(.0001,at+step*.9);at+=step;
+    }
+    at+=.07;
+  }
+  o.start();o.stop(at+.1);
+  speaking=true;setS('speak','SPEAKING');
+  setTimeout(()=>{speaking=false;setS('idle',always?'LISTENING FOR "JARVIS"':'STANDBY')},Math.max(300,(at-ac.currentTime)*1000+100));
+}
+async function voiceTest(){
+  unlock();
+  try{const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=660;g.gain.value=.15;o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+.3)}catch(e){}
+  const sup='speechSynthesis' in window;let started=false;
+  if(sup){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance('जाँच');u.lang='hi-IN';if(voice)u.voice=voice;u.onstart=()=>{started=true};speechSynthesis.speak(u);await new Promise(r=>setTimeout(r,2500))}
+  if(started)ttsDead=false;
+  let cloud=false;
+  if(!started&&online()){cloud=await new Promise(r=>{const a=new Audio('https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=hi&q='+encodeURIComponent('जाँच'));const to=setTimeout(()=>r(false),6000);a.onplaying=()=>{clearTimeout(to);r(true)};a.onerror=()=>{clearTimeout(to);r(false)};const p=a.play();if(p&&p.catch)p.catch(()=>{clearTimeout(to);r(false)})});cloudDead=!cloud;if(cloud)ttsDead=true}
+  note('जाँच: बीप चलाई (सुनाई दी?) · आवाज़ इंजन: '+(sup?'है':'नहीं')+' · आवाज़ें: '+VL.length+' · बोलना शुरू हुआ: '+(started?'हाँ':'नहीं')+(started?'':' · इंटरनेट वाली आवाज़: '+(cloud?'चली ✓ अब FROST उसी से बोलेगा':'नहीं चली'))+'। '+(started||cloud?'इंजन ठीक है; अगर फिर भी आवाज़ नहीं आती तो मीडिया वॉल्यूम और साइलेंट मोड देखिए।':'आपके ब्राउज़र का आवाज़ इंजन चुप है। पेज को Chrome में खोलिए और Google Text-to-speech ऐप में हिंदी आवाज़ डाउनलोड कीजिए। तब तक 🤖 रोबोट बीप आवाज़ चालू रखिए।')+(' बीप भी न सुनाई दे तो फ़ोन का मीडिया वॉल्यूम बढ़ाइए।'));
+}
+function MD(n){return 'https://trigger.macrodroid.com/'+mem.mdid+'/'+encodeURIComponent(n)}
+function note(m){st.textContent=m;add(m,'a')}
+function flash(){const b=$('pw');b.classList.remove('fl');void b.offsetWidth;b.classList.add('fl')}
+function diag(){$('dg').textContent=(power?'⏻ चालू':'⏻ बंद')+' · मोड: '+(online()&&sample?'ऑनलाइन + ऑफ़लाइन दोनों':'ऑफ़लाइन दिमाग')+' · AI: '+(sample?'जुड़ा ✓':'अभी नहीं')+' · आवाज़ें: '+VL.length+' · '+(online()?'नेट ✓':'नेट नहीं')}
+async function connectAI(){
+  st.textContent='अनुमति माँग रहा हूँ…';
+  try{
+    if(!sample){try{sample=await claude.use('sample')}catch(e){sample=null}}
+    if(!sample){note('AI नहीं जुड़ा। इस पेज को Claude ऐप में, या claude.ai पर अपने अकाउंट से लॉगिन करके खोलिए। दूसरे ब्राउज़र में AI की अनुमति नहीं मिलती।');return}
+    await Promise.race([sample('सिर्फ़ एक शब्द लिखो: ठीक',{cache:false}),new Promise((_,j)=>setTimeout(()=>j({code:'timeout'}),25000))]);
+    note('AI जुड़ गया ✓ अब आप बात कर सकते हैं।');
+  }catch(e){
+    note(e&&e.code==='not_granted'?'अनुमति नहीं मिली। "⚙ अनुमति सेटिंग्स" दबाकर AI को Allow कीजिए।':e&&e.code==='timeout'?'अनुमति की खिड़की नहीं दिखी। "⚙ अनुमति सेटिंग्स" दबाइए।':'AI से जुड़ नहीं पाया। थोड़ी देर बाद फिर कोशिश कीजिए।');
+  }
+  diag();
+}
+async function openPerms(){try{const p=await claude.use('permissions');await p.manage()}catch(e){note('अनुमति का पैनल नहीं खुला। पेज के ऊपर वाले मेनू में Permissions देखिए।')}}
+function setPower(on){
+  power=on;$('pw').setAttribute('aria-pressed',String(on));$('pw').textContent=on?'⏻ बंद करें':'⏻ चालू करें';
+  document.body.classList.toggle('off',!on);
+  if(on){setS('idle','STANDBY');st.textContent='';greet()}
+  else{always=false;greeted=false;busy=false;$('aw').setAttribute('aria-pressed','false');$('aw').textContent='हमेशा सुनो: बंद (कहिए "फ्रॉस्ट…")';
+    if(rec){rec.onend=null;rec.stop();rec=null}speechSynthesis.cancel();try{wl&&wl.release()}catch(e){}wl=null;setS('idle','OFFLINE')}
+}
+function act(label,url){const b=document.createElement('button');b.className='b act';b.textContent='▶ '+label;
+  b.onclick=()=>{b.disabled=true;if(/^https?:/.test(url))window.open(url,'_blank');else location.href=url};
+  log.appendChild(b);log.scrollTop=log.scrollHeight;return 'स्क्रीन पर बटन आ गया है, यूज़र उसे दबाकर पक्का करेगा'}
+function applyName(){const n=mem.aname||'FROST';document.title=n;document.querySelector('h1').textContent=n.toUpperCase().split('').join('.')+'.';WAKE=new RegExp('(हे )?('+n.replace(/[.*+?^${}()|[\]\\]/g,'')+'|फ्रॉस्ट|फ़्रॉस्ट|फ्रोस्ट|frost|जार्विस|जारविस|jarvis)[,.!? ]*','i')}
+let hist=[],sample=null,busy=false,speaking=false,always=false,rec=null,voice=null,hold=0,wl=null,pending=false;
+
+function setS(s,label){document.body.dataset.s=s;stateEl.textContent=label}
+function add(t,c){const d=document.createElement('div');d.className='m '+c;d.textContent=t;log.appendChild(d);log.scrollTop=log.scrollHeight}
+let VL=[];
+function pickVoice(){
+  const v=speechSynthesis.getVoices();
+  VL=v.slice().sort((a,b)=>(b.lang.startsWith('hi')-a.lang.startsWith('hi'))||(b.localService-a.localService));
+  voice=VL.find(x=>x.name===mem.vname)||VL.find(x=>x.lang==='hi-IN')||VL.find(x=>x.lang.startsWith('hi'))||null;
+  const vs=$('vs');vs.innerHTML='';
+  VL.forEach((x,i)=>{const o=document.createElement('option');o.value=i;o.textContent=x.name+' ('+x.lang+')'+(x.localService?' · ऑफ़लाइन चलेगी':' · नेट चाहिए');if(x===voice)o.selected=true;vs.appendChild(o)});
+  $('vn').textContent=VL.length?(VL.some(x=>x.lang.startsWith('hi'))?'':'इस डिवाइस पर हिंदी आवाज़ नहीं मिली। सेटिंग्स में Google Text-to-speech की हिंदी आवाज़ डाउनलोड करें।'):'इस ब्राउज़र में कोई आवाज़ नहीं मिली।';
+}
+if('speechSynthesis' in window){pickVoice();speechSynthesis.onvoiceschanged=pickVoice}
+function speak(t){
+  if(mem.robot){robotSpeak(t);return}
+  if(ttsDead||!('speechSynthesis' in window)){if(!cloudDead&&online())cloudSpeak(t,()=>robotSpeak(t));else robotSpeak(t);return}
+  speechSynthesis.cancel();let started=false;const u=new SpeechSynthesisUtterance(t);u.lang='hi-IN';u.rate=rate*(emo==='sad'?.9:emo==='excited'||emo==='joy'?1.08:1);u.pitch=pitch*(emo==='sad'?.9:emo==='joy'||emo==='excited'?1.1:1);if(voice)u.voice=voice;
+  u.onstart=()=>{started=true;speaking=true;setS('speak','SPEAKING')};
+  u.onend=u.onerror=()=>{speaking=false;setS('idle',always?'LISTENING FOR "JARVIS"':'STANDBY')};
+  setTimeout(()=>speechSynthesis.speak(u),80);
+  setTimeout(()=>{if(!started&&!ttsDead){ttsDead=true;speechSynthesis.cancel();note('टैबलेट की आवाज़ चुप है, इसलिए इंटरनेट वाली हिंदी आवाज़ आज़मा रहा हूँ।');if(!cloudDead&&online())cloudSpeak(t,()=>{note('इंटरनेट वाली आवाज़ भी नहीं चली, रोबोट बीप आवाज़ चला रहा हूँ।');robotSpeak(t)});else robotSpeak(t)}},3500);
+}
+function say(t){t=t.replace(/(^|[\s,।])सर(?=[\s,।.!?]|$)/g,'$1'+mem.name);add(t,'a');speak(t)}
+$('vs').onchange=()=>{voice=VL[+$('vs').value]||voice;if(voice){mem.vname=voice.name;save()}speak('नमस्ते '+mem.name+', मैं '+(mem.aname||'FROST')+' हूँ।')};
+document.querySelectorAll('#vst button').forEach(b=>b.onclick=()=>{pitch=+b.dataset.p;rate=+b.dataset.r;mem.vpitch=pitch;mem.vrate=rate;save();speak('नमस्ते '+mem.name+', मैं '+(mem.aname||'FROST')+' हूँ।')});
+$('vd').onclick=voiceTest;
+$('rb').onclick=()=>{mem.robot=!mem.robot;save();$('rb').setAttribute('aria-pressed',String(!!mem.robot));if(mem.robot)robotSpeak('नमस्ते '+mem.name)};
+$('rb').setAttribute('aria-pressed',String(!!mem.robot));
+$('vt').onclick=()=>speak('नमस्ते '+mem.name+', मैं '+(mem.aname||'FROST')+' हूँ। बोलिए, क्या करना है?');
+$('vb').onclick=()=>{const h=$('vp').hidden;$('vp').hidden=!h;$('vb').setAttribute('aria-expanded',String(h))};
+function greet(){if(greeted)return;greeted=true;setEmotion('joy');const h=new Date().getHours();say((h<12?'सुप्रभात':h<17?'नमस्कार':h<21?'शुभ संध्या':'नमस्ते')+' '+mem.name+', '+(mem.aname||'FROST')+' ऑनलाइन है। कहिए, क्या करना है?')}
+(async()=>{try{sample=await claude.use('sample')}catch(e){sample=null}if(!sample)st.textContent='AI अभी नहीं जुड़ा। नीचे "🔑 AI जोड़ें" दबाइए।'})();
+
+
+const cv=$('orb'),cx=cv.getContext('2d'),RM=matchMedia('(prefers-reduced-motion:reduce)').matches;
+const P={off:[.01,.15],idle:[.035,.5],listen:[.07,1.3],think:[.06,2.6],speak:[.1,2.0]};
+let emo='calm',emoUntil=0,turns=0;
+const ep={amp:1,spd:1,sc:1,sag:0,jit:0};
+const E={calm:{amp:1,spd:1,sc:1,sag:0,jit:0,c:null},joy:{amp:2.2,spd:1.7,sc:1.07,sag:0,jit:0,c:'#ffd84a'},sad:{amp:.5,spd:.45,sc:.92,sag:.22,jit:0,c:'#7f8cff'},surprise:{amp:2.8,spd:2.4,sc:1.16,sag:0,jit:0,c:'#ffffff'},love:{amp:1.4,spd:.9,sc:1.05,sag:0,jit:0,c:'#ff6fa5',hb:1},excited:{amp:2.6,spd:2.6,sc:1.1,sag:0,jit:0,c:'#4dffb4'},angry:{amp:1.6,spd:2.2,sc:1.03,sag:0,jit:.05,c:'#ff4d4d'}};
+function setEmotion(e){if(!E[e])e='calm';emo=e;emoUntil=performance.now()+(e==='calm'?0:9000);if(e!=='calm')ep.sc+=.12}
+function detectEmo(q){const t=q.toLowerCase();
+ if(/(दुखी|उदास|रोना|रो रहा|परेशान|अकेला|बुरा लग|निराश|थक गया|तनाव)/.test(t))setEmotion('sad');
+ else if(/(गुस्सा|नफ़रत|चिढ़|बकवास)/.test(t))setEmotion('angry');
+ else if(/(प्यार|लव यू|love you)/.test(t))setEmotion('love');
+ else if(/(हाहा|हा हा|😂|😄|मज़ा|मजा|शानदार|बढ़िया|ज़बरदस्त|जबरदस्त|धन्यवाद|शुक्रिया|थैंक|खुश|मस्त)/.test(t))setEmotion('joy');
+ else if(/(वाह|अरे|क्या बात|सच में|कमाल)/.test(t))setEmotion('surprise')}
+let amp=.07,spd=.5,ph=0,col=['#27d3ff','#ff9d2e'],fr=0,last=performance.now();
+const N=1500,PT=[];
+for(let i=0;i<N;i++){const y=1-2*(i+.5)/N,r=Math.sqrt(1-y*y),a=i*2.399963;const px=Math.cos(a)*r,pz=Math.sin(a)*r,T=pz>0&&((y<-.38&&y>-.6&&Math.abs(px)<.38)||(Math.abs(px)<.09&&y<.42&&y>=-.38))?1:0;PT.push([px,y,pz,i%7===0?1:0,Math.random()*6.28,T])}
+function frame(now){
+  const dt=Math.min(.05,(now-last)/1000);last=now;
+  const s=power?(document.body.dataset.s||'idle'):'off',[ta,ts]=P[s]||P.idle;
+  if(emo!=='calm'&&now>emoUntil)emo='calm';
+  const T=E[emo];for(const k of ['amp','spd','sc','sag','jit'])ep[k]+=(T[k]-ep[k])*.07;
+  const hbv=T.hb?Math.pow(Math.max(0,Math.sin(now/260)),6)*.08:0;
+  amp+=(ta*(RM?.3:1)-amp)*.08;spd+=(ts-spd)*.08;ph+=dt*spd*ep.spd;
+  if(fr++%30===0){const c=getComputedStyle(document.documentElement);col=[ovr||c.getPropertyValue('--ac').trim(),c.getPropertyValue('--ac2').trim()];fg=c.getPropertyValue('--fg').trim()}
+  if(T.c)col[0]=T.c;
+  const W=cv.width,R=W*.27*ep.sc*(1+hbv),c=W/2;cx.clearRect(0,0,W,W);
+  const beat=s==='speak'?Math.sin(now/110)*.05:0;
+  const ry=ph*.35,cy=Math.cos(ry),sy=Math.sin(ry),tl=.35,ct=Math.cos(tl),st2=Math.sin(tl);
+  const cb=((now/2600)%1)*2.4-1.2,out=[];
+  for(const p of PT){
+    const n=Math.sin(p[0]*3+ph*1.1+p[4]*.3)+Math.sin(p[1]*4-ph*.9)+Math.sin(p[2]*3+ph*1.4);
+    const k=1+(amp*ep.amp*1.4+beat)*n/3*2.2;
+    const wx=1+.25*ep.sag,jt=ep.jit>.002?ep.jit:0;const x=p[0]*k*wx+(jt?(Math.random()-.5)*jt:0),y=p[1]*k*(1-.6*ep.sag)+ep.sag*.3+(jt?(Math.random()-.5)*jt:0),z=p[2]*k*wx;
+    const x1=x*cy+z*sy,z1=-x*sy+z*cy;
+    const y1=y*ct-z1*st2,z2=y*st2+z1*ct;
+    out.push([c+x1*R*(1+z2*.15),c+y1*R*(1+z2*.15),z2,0,p[5],Math.max(0,1-Math.abs(p[1]-cb)/.14),0]);
+  }
+  const ra=ph*.6,rc=Math.cos(.9),rs=Math.sin(.9);
+  for(let j=0;j<110;j++){
+    const a=j/110*6.283+ra,x=Math.cos(a)*1.38,z=Math.sin(a)*1.38;
+    const x1=x*cy+z*sy,z1=-x*sy+z*cy,y1=-z1*rs,z2=z1*rc;
+    out.push([c+x1*R,c+y1*R,z2,0,0,0,1]);
+  }
+  out.sort((a,b)=>a[2]-b[2]);
+  const gl=cx.createRadialGradient(c,c,R*.2,c,c,R*1.5);gl.addColorStop(0,col[0]);gl.addColorStop(1,'rgba(0,0,0,0)');
+  cx.globalAlpha=.16+(s==='speak'?.08:0);cx.fillStyle=gl;cx.fillRect(0,0,W,W);
+  for(const o of out){
+    const d=(o[2]+1.4)/2.8;
+    if(o[6]){cx.globalAlpha=.12+d*.55;cx.fillStyle=fg;cx.beginPath();cx.arc(o[0],o[1],1.2+d*1.3,0,6.283);cx.fill();continue}
+    cx.globalAlpha=Math.min(1,.25+d*.75+(o[4]?.25:0)+o[5]*.5);
+    cx.fillStyle=o[5]>.3||o[4]?fg:col[0];
+    cx.beginPath();cx.arc(o[0],o[1],1.5+d*2.2+(o[4]?.7:0)+o[5]*1.4,0,6.283);cx.fill();
+  }
+  cx.globalAlpha=1;
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+setInterval(()=>{$('clk').textContent=(diag(),online()?'SYS ONLINE  ':'OFFLINE MODE  ')+new Date().toLocaleTimeString('en-GB')},1000);
+const dig=s=>s.replace(/[०-९]/g,c=>'०१२३४५६७८९'.indexOf(c));
+function beep(){try{const a=new AudioContext(),o=a.createOscillator();o.connect(a.destination);o.frequency.value=880;o.start();o.stop(a.currentTime+.6)}catch(e){}}
+
+function online(){return navigator.onLine!==false}
+const COLORS={'लाल':'#ff3b3b','नीला':'#27d3ff','नीले':'#27d3ff','हरा':'#2cff9a','हरे':'#2cff9a','पीला':'#ffd84a','गुलाबी':'#ff6fa5','बैंगनी':'#a56bff','सफ़ेद':'#ffffff','सफेद':'#ffffff'};
+const OFFHELP='बिना इंटरनेट के भी मैं समय, तारीख, हिसाब, प्रतिशत, नाप-तौल बदलना, याद रखना, टू-डू लिस्ट, टाइमर, स्टॉपवॉच, याद दिलाना, बैटरी, चुटकुले, सुविचार, सिक्का, पासा, रंग बदलना और बातचीत कर सकता हूँ। गहरे सवालों के लिए AI और इंटरनेट चाहिए।';
+const R=a=>a[Math.floor(Math.random()*a.length)];
+const JOKES=['टीचर ने पूछा, बताओ सबसे तेज़ क्या चलता है? बच्चा बोला, मैडम, रिज़ल्ट वाले दिन मेरा दिल।','पत्नी ने कहा, मैं मायके जा रही हूँ। पति बोला, रुको, मैं टिकट ले आता हूँ।','एक आदमी डॉक्टर से बोला, मुझे भूलने की बीमारी है। डॉक्टर बोला, कब से? वह बोला, कब से क्या?','चोर ने घर में घुसकर कहा, चुपचाप खड़े रहो। मालिक बोला, भाई, मैं तो खुद दो घंटे से अपना वाईफाई ढूँढ रहा हूँ।'];
+const QUOTES=['गिरकर उठना ही असली जीत है।','आज का छोटा कदम, कल की बड़ी मंज़िल बनता है।','जो डर गया, वह रुक गया। जो चला, वह पहुँच गया।','मेहनत की आवाज़ नहीं होती, उसका नतीजा शोर मचाता है।'];
+let BAT=null,SW=0;try{navigator.getBattery&&navigator.getBattery().then(b=>BAT=b)}catch(e){}
+const UNITS=[[/(किलोमीटर|किमी|km)/,/(मील|mile)/,v=>v*.621371,'मील'],[/(मील|mile)/,/(किलोमीटर|किमी|km)/,v=>v*1.609344,'किलोमीटर'],[/(किलो|kg)/,/(पाउंड|lb)/,v=>v*2.20462,'पाउंड'],[/(पाउंड|lb)/,/(किलो|kg)/,v=>v*.453592,'किलो'],[/(सेल्सियस|celsius)/,/(फ़ारेनहाइट|फारेनहाइट|fahrenheit)/,v=>v*9/5+32,'डिग्री फ़ारेनहाइट'],[/(फ़ारेनहाइट|फारेनहाइट|fahrenheit)/,/(सेल्सियस|celsius)/,v=>(v-32)*5/9,'डिग्री सेल्सियस'],[/(मीटर|meter)/,/(फ़ुट|फीट|feet|foot)/,v=>v*3.28084,'फ़ुट'],[/(फ़ुट|फीट|feet|foot)/,/(मीटर|meter)/,v=>v*.3048,'मीटर']];
+function brain(q){
+  const t=dig(q.toLowerCase().trim());let m;
+  if(/(कैसे हो|कैसा है|क्या हाल)/.test(t))return R(['मैं बिल्कुल ठीक हूँ, '+mem.name+'। आप बताइए?','एकदम बढ़िया, '+mem.name+'। आपके लिए क्या करूँ?']);
+  if(/(तुम कौन|आप कौन|अपना परिचय)/.test(t))return 'मैं '+(mem.aname||'FROST')+' हूँ, आपका निजी असिस्टेंट। समय, हिसाब, याद रखना, लिस्ट, टाइमर और बातचीत, सब बिना इंटरनेट के भी कर सकता हूँ।';
+  if(/(तुम्हारा नाम|आपका नाम)/.test(t))return 'मेरा नाम '+(mem.aname||'FROST')+' है।';
+  if((m=t.match(/मेरा नाम\s+(.+?)\s*(?:है|हैं)?$/))&&!/क्या/.test(m[1])){mem.name=m[1].slice(0,30);save();return 'ठीक है, अब से आपको '+mem.name+' बुलाऊँगा।'}
+  if(/(मेरा नाम क्या|मैं कौन हूँ)/.test(t))return 'आप '+mem.name+' हैं।';
+  if(/(धन्यवाद|शुक्रिया|थैंक)/.test(t)){setEmotion('joy');return R(['आपका स्वागत है, '+mem.name+'।','कोई बात नहीं, यह तो मेरा काम है।'])}
+  if(/^(नमस्ते|हैलो|हेलो|हाय|सुप्रभात|शुभ रात्रि|गुड मॉर्निंग|गुड नाइट)/.test(t))return 'नमस्ते '+mem.name+'! कहिए, क्या करूँ?';
+  if(/(जोक|चुटकुला|हँसाओ|मज़ाक|मजाक)/.test(t)){setEmotion('joy');return R(JOKES)}
+  if(/(प्रेरणा|सुविचार|मोटिवेशन|विचार सुनाओ)/.test(t))return R(QUOTES);
+  if(/(सिक्का|टॉस)/.test(t))return 'सिक्का उछाला, '+(Math.random()<.5?'चित':'पट')+' आया।';
+  if(/(पासा|डाइस)/.test(t))return 'पासे पर '+(1+Math.floor(Math.random()*6))+' आया।';
+  if((m=t.match(/(\d+)\s*(?:से|और)\s*(\d+)\s*(?:के बीच|तक).*(?:नंबर|संख्या)/))){const a=+m[1],b=+m[2],lo=Math.min(a,b),hi=Math.max(a,b);return 'आपका नंबर '+(lo+Math.floor(Math.random()*(hi-lo+1)))+' है।'}
+  if(/(बैटरी|चार्ज कितना)/.test(t))return BAT?'बैटरी '+Math.round(BAT.level*100)+' प्रतिशत है'+(BAT.charging?' और चार्ज हो रही है।':'।'):'इस ब्राउज़र में बैटरी की जानकारी नहीं मिलती।';
+  if(/(स्टॉपवॉच|stopwatch)/.test(t)){if(/(शुरू|चालू|start)/.test(t)){SW=Date.now();return 'स्टॉपवॉच चालू।'}if(SW){const d=Math.round((Date.now()-SW)/1000);SW=0;return 'स्टॉपवॉच बंद। '+Math.floor(d/60)+' मिनट '+(d%60)+' सेकंड हुए।'}return 'पहले कहिए, स्टॉपवॉच शुरू करो।'}
+  if((m=t.match(/(\d+)\s*(मिनट|सेकंड|सेकेंड)\s*(?:बाद|में)\s*(.+?)\s*(?:याद दिला|बता दे|बताना)/))){const sec=/मिनट/.test(m[2])?+m[1]*60:+m[1];setTimeout(()=>{beep();say('याद दिलाना: '+m[3])},sec*1000);return 'ठीक है, '+m[1]+' '+m[2]+' बाद आपको याद दिलाऊँगा। पेज खुला रखिएगा।'}
+  if((m=t.match(/(\d+(?:\.\d+)?)\s*का\s*(\d+(?:\.\d+)?)\s*(?:प्रतिशत|%|परसेंट)/)))return m[2]+' प्रतिशत '+m[1]+' का '+(+(m[1]*m[2]/100).toFixed(4))+' होता है।';
+  if((m=t.match(/(\d+(?:\.\d+)?)\s*([^\d]+)/))){for(const u of UNITS){if(u[0].test(m[2])&&u[1].test(m[2].replace(u[0],''))&&/(कितने|कितना|में|बदल|convert)/.test(t))return m[1]+' '+(m[2].match(u[0])[0])+' बराबर '+(+u[2](+m[1]).toFixed(3))+' '+u[3]+' होता है।'}}
+  if(/(क्या कर सकते|क्या क्या कर|हेल्प|मदद)/.test(t))return OFFHELP;
+  if((m=t.match(/^(?:याद रखो|नोट करो)[,\s]*(.+)/))){mem.notes.push(m[1].slice(0,200));mem.notes=mem.notes.slice(-30);save();return 'याद कर लिया।'}
+  if(/(क्या याद|मेरे नोट|याद है)/.test(t))return mem.notes.length?'आपने ये बताया था: '+mem.notes.slice(-5).join('। '):'अभी कुछ याद नहीं है।';
+  if((m=t.match(/(?:लिस्ट|टू-?डू|todo)(?: में)?[,\s]*(.+?)\s*(?:जोड़|डाल|add)/))||(m=t.match(/(.+?)\s*(?:लिस्ट|टू-?डू) में\s*(?:जोड़|डाल)/))){mem.todos=mem.todos||[];mem.todos.push(m[1].slice(0,150));save();return 'जोड़ दिया। अब '+mem.todos.length+' काम हैं।'}
+  if(/(लिस्ट|टू-?डू).*(साफ़|खाली|सब हटाओ|मिटाओ)/.test(t)){mem.todos=[];save();return 'लिस्ट खाली कर दी।'}
+  if(/(लिस्ट|टू-?डू).*(बताओ|दिखाओ|पढ़ो|क्या है)/.test(t))return (mem.todos||[]).length?'आपके काम: '+mem.todos.map((x,i)=>(i+1)+'. '+x).join('। '):'लिस्ट खाली है।';
+  if(/(रंग|कलर)/.test(t)){const k=Object.keys(COLORS).find(c=>t.includes(c));if(k){ovr=COLORS[k];return 'रंग बदल दिया।'}}
+  if(/(धीरे|आराम से)\s*बोल/.test(t)){rate=mem.vrate=.85;save();return 'ठीक है, अब धीरे बोलूँगा।'}
+  if(/(तेज़|जल्दी)\s*बोल/.test(t)){rate=mem.vrate=1.2;save();return 'ठीक है, अब तेज़ बोलूँगा।'}
+  const e=t.replace(/गुणा|गुना|×|\bx\b/g,'*').replace(/भाग|÷/g,'/').replace(/जमा|जोड़ो|जोड़|प्लस/g,'+').replace(/घटाओ|घटा|माइनस|minus/g,'-');
+  const c=e.match(/[0-9][0-9+\-*\/().\s]*[0-9]/);
+  if(c&&/[+\-*\/]/.test(c[0])&&/^[0-9+\-*\/().\s]+$/.test(c[0])){try{const v=Function('"use strict";return ('+c[0]+')')();if(Number.isFinite(v))return 'जवाब है '+(+v.toFixed(6))}catch(x){}}
+  return undefined;
+}
+function offlineCmd(q){return brain(q)||((online()?'AI अभी जुड़ा नहीं है। नीचे "🔑 AI जोड़ें" दबाकर अनुमति दीजिए। तब तक: ':'अभी इंटरनेट नहीं है, इसलिए यह मैं नहीं समझ पाया। ')+OFFHELP)}
+function local(q){
+  const t=dig(q.toLowerCase());
+  const md=q.match(/trigger\.macrodroid\.com\/([A-Za-z0-9\-_]+)/);
+  if(md){mem.mdid=md[1];save();return 'MacroDroid जुड़ गया। अब कहिए "फ़ोन लॉक करो" या "टॉर्च चालू करो"। इसके लिए आपके मैक्रो के नाम lock, torch_on और torch_off होने चाहिए।'}
+  if(/(टॉर्च|torch|फ्लैश ?लाइट)/.test(t)&&mem.mdid){const off=/(बंद|off)/.test(t);act('टॉर्च '+(off?'बंद':'चालू')+' करें',MD(off?'torch_off':'torch_on'));return 'नीचे का बटन दबाइए।'}
+  if(/लॉक|lock|स्क्रीन बंद/.test(t)&&mem.mdid){act('स्क्रीन लॉक करें',MD('lock'));return 'ठीक है, नीचे का बटन दबाइए, स्क्रीन लॉक हो जाएगी।'}
+  if(/(बंद हो जा|शट ?डाउन|ऑफ हो जा|सो जाओ)/.test(t)){setTimeout(()=>setPower(false),3500);return 'ठीक है, बंद हो रहा हूँ। चालू करने के लिए ऊपर का बटन दबाइए।'}
+  const tm=t.match(/(\d+)\s*(मिनट|सेकंड|सेकेंड|minute|second)/);
+  if(/टाइमर|timer|अलार्म/.test(t)&&tm){
+    const n=+tm[1],sec=/मिनट|minute/.test(tm[2])?n*60:n;
+    setTimeout(()=>{beep();say('सर, आपका टाइमर पूरा हो गया।')},sec*1000);
+    return `ठीक है सर, ${n} ${tm[2]} का टाइमर चालू है। ध्यान रहे, यह तभी बजेगा जब यह पेज खुला रहे।`;
+  }
+  if(/समय|टाइम|कितने बजे/.test(t))return 'सर, अभी '+new Date().toLocaleTimeString('hi-IN',{hour:'numeric',minute:'2-digit'})+' बजे हैं।';
+  if(/तारीख|आज.*दिन|डेट/.test(t))return 'आज '+new Date().toLocaleDateString('hi-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'})+' है।';
+  if(/डार्क|अंधेरा/.test(t)){document.documentElement.dataset.theme='dark';return 'डार्क मोड चालू, सर।'}
+  if(/लाइट मोड|उजाला|रोशनी/.test(t)){document.documentElement.dataset.theme='light';return 'लाइट मोड चालू, सर।'}
+  if(/लॉक|lock|स्क्रीन बंद/.test(t))return 'माफ़ कीजिए सर, फ़ोन की स्क्रीन लॉक करना ब्राउज़र के बस में नहीं है। इसके लिए अलग ऐप चाहिए। आप फ़ोन का पावर बटन दबाइए।';
+  const site=[[/यूट्यूब|youtube/,'https://www.youtube.com','यूट्यूब'],[/गूगल|google/,'https://www.google.com','गूगल'],[/व्हाट्सएप|whatsapp/,'https://web.whatsapp.com','व्हाट्सएप']].find(x=>x[0].test(t));
+  if(site&&/खोल|चला|open/.test(t)){act('खोलें: '+site[2],site[1]);return site[2]+' का बटन नीचे है, सर, उसे दबाइए।'}
+  if(/^(रुको|चुप|स्टॉप|बस)\b/.test(t)){speechSynthesis.cancel();return null}
+  return undefined;
+}
+
+async function ask(q){
+  q=q.trim();if(!q||busy)return;
+  if(!power){note('FROST बंद है। ऊपर ⏻ दबाकर चालू कीजिए।');flash();return}
+  add(q,'u');detectEmo(q);
+  const l=local(q);
+  if(l!==undefined){if(l)say(l);return}
+  const bn=brain(q);if(bn){say(bn);return}
+  if(!sample||!online()){say(offlineCmd(q));return}
+  busy=true;setS('think','PROCESSING');hist.push({role:'user',content:q});
+  try{
+    const turns=hist.slice(-12).map((m,i)=>i===0?{role:'user',content:sysP()+"\n\n"+m.content}:m);
+    const r=await Promise.race([sample(turns,{cache:false,tools:TOOLS}),new Promise((_,j)=>setTimeout(()=>j({code:'timeout'}),30000))]);
+    const a=(r.text||'').trim()||'माफ़ कीजिए सर, जवाब नहीं बन पाया।';
+    hist.push({role:'assistant',content:a});say(a);if(++turns%6===0)reflect();
+  }catch(e){
+    hist.pop();setS('idle','STANDBY');if(!online())say(offlineCmd(q));
+    note(e&&e.code==='not_granted'?'अनुमति नहीं मिली। "⚙ अनुमति सेटिंग्स" दबाकर AI को Allow कीजिए।':e&&e.code==='timeout'?'जवाब नहीं आया। शायद अनुमति की खिड़की छिपी है, "⚙ अनुमति सेटिंग्स" दबाइए।':e&&e.code==='rate_limited'?'थोड़ी देर रुककर फिर बोलिए।':'जवाब नहीं आया। फिर कोशिश कीजिए।');
+  }
+  busy=false;
+}
+
+let WAKE=/(हे )?(फ्रॉस्ट|फ़्रॉस्ट|फ्रोस्ट|frost|जार्विस|जारविस|जार्विश|जर्विस|जार्विज|jarvis)[,.!? ]*/i;
+function heard(text){
+  if(speaking||busy)return;
+  if(!always){ask(text);return}
+  const m=text.match(WAKE);
+  if(m){
+    const rest=text.slice(m.index+m[0].length).trim();
+    if(rest){pending=false;ask(rest)}else{pending=true;hold=Date.now()+8000;setS('listen','YES, SIR?');speak('जी, '+mem.name+'?')}
+  }else if(pending&&Date.now()<hold){pending=false;ask(text)}
+}
+
+function startRec(cont){
+  if(!SR){st.textContent='इस ब्राउज़र में बोलकर इनपुट नहीं चलता। Chrome या Safari इस्तेमाल करें, या लिखकर भेजिए।';return}
+  if(rec)return;
+  rec=new SR();rec.lang='hi-IN';rec.continuous=cont;rec.interimResults=false;
+  rec.onstart=()=>{if(!speaking&&!busy)setS('listen',cont?'LISTENING FOR "JARVIS"':'LISTENING');st.textContent=''};
+  rec.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)heard(e.results[i][0].transcript)};
+  rec.onerror=e=>{if(e.error==='network')st.textContent='बोलकर इनपुट के लिए इंटरनेट चाहिए। नीचे लिखकर भेजिए, या कीबोर्ड का माइक इस्तेमाल कीजिए।';if(e.error==='not-allowed'||e.error==='service-not-allowed'){always=false;$('aw').setAttribute('aria-pressed','false');st.textContent='माइक की अनुमति दीजिए।'}};
+  rec.onend=()=>{rec=null;if(always)setTimeout(()=>startRec(true),300);else if(!speaking&&!busy)setS('idle','STANDBY')};
+  try{rec.start()}catch(e){rec=null}
+}
+
+$('hud').onclick=()=>{if(!power){setPower(true);return}if(speaking){stopVoice();speaking=false;return}greet();
+  if(rec&&!always){rec.stop();return}
+  if(always)return;
+  speechSynthesis.cancel();startRec(false);
+};
+$('aw').onclick=async()=>{if(!power){st.textContent='पहले ऊपर ⏻ दबाकर चालू कीजिए।';return}greet();
+  always=!always;$('aw').setAttribute('aria-pressed',String(always));
+  $('aw').textContent=always?'हमेशा सुनो: चालू (स्क्रीन खुली रखें)':'हमेशा सुनो: बंद (कहिए "जार्विस…")';
+  if(always){
+    try{wl=await navigator.wakeLock.request('screen')}catch(e){}
+    if(rec){rec.onend=null;rec.stop();rec=null}startRec(true);
+  }else{
+    try{wl&&wl.release()}catch(e){}wl=null;if(rec)rec.stop();
+  }
+};
+document.addEventListener('visibilitychange',async()=>{if(always&&!document.hidden){try{wl=await navigator.wakeLock.request('screen')}catch(e){}}});
+$('ai').onclick=connectAI;$('pm').onclick=openPerms;
+$('pw').onclick=()=>setPower(!power);
+$('go').onclick=()=>{const v=txt.value;txt.value='';ask(v)};
+txt.addEventListener('keydown',e=>{if(e.key==='Enter')$('go').click()});
+add('FROST अभी बंद है। ऊपर ⏻ दबाकर चालू कीजिए। फिर गेंद दबाकर बोलिए, या "हमेशा सुनो" चालू करके कहिए "फ्रॉस्ट, ..."','a');
+applyName();
+window.addEventListener('offline',()=>{st.textContent='इंटरनेट गया। कोई बात नहीं, ऑफ़लाइन दिमाग चालू है। बोलकर इनपुट की जगह लिखकर भेजिए।'});
+window.addEventListener('online',()=>{st.textContent='इंटरनेट लौट आया।'});
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
